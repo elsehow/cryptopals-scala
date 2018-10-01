@@ -83,5 +83,15 @@ case class Buffer (bytes: Array[Byte]) {
   }
 
 
+  /* Padding */
+  def padPKCS7 (targetLength: Integer): Buffer = {
+    require(this.length < targetLength)
+    val length = targetLength - (this.length % targetLength)
+    Buffer(
+      bytes ++ Array.fill[Byte](length)(length.toByte)
+    )
+  }
+
+
 
 }

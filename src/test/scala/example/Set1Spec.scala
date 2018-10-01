@@ -6,7 +6,6 @@ import scala.io.Source
 
 class Challenge1Spec extends FlatSpec with Matchers {
 
-
   "Challenge1" should "convert hex to base64" in {
 
     val hexStr: String =
@@ -49,10 +48,9 @@ class Challenge3Spec extends FlatSpec with Matchers {
 
 
 
-// TODO this test takes a while to run
+// NOTE this test takes a while to run
 class Challenge4Spec extends FlatSpec with Matchers {
-  // "Set1/Challenge4" should "detect single-byte XOR cipher" in {
-  ignore should "detect single-byte XOR cipher" in {
+  "Set1/Challenge4" should "detect single-byte XOR cipher" in {
     val filename = "src/test/assets/4.txt"
     val hexStrings =
       Source.fromFile(filename).getLines
@@ -139,24 +137,17 @@ class Challenge8Spec extends FlatSpec with Matchers {
   val ciphertexts =
     Source.fromFile("src/test/assets/8.txt")
       .getLines
-      .map { Buffer.fromHexEncodedString _ }
-      .toList
 
-  // "Challenge8" should "detect AES in ECB mode" in {
-  ignore should "detect AES in ECB mode" in {
-    val scores =
-      ciphertexts
-        .map { _.blockUniqueness() }
-        .toList
-
-    println(scores)
-
+  "Challenge8" should "detect AES in ECB mode" in {
     val guess =
-      (scores zip ciphertexts)
-        .toList
-        .sortWith(_._1 < _._1)
-        .head
+      ciphertexts
+        .map(l => {
+               // chunks of 32 in hex encoding is the same as chunks of 16 in bytes
+               val blocks = l.grouped(32).toList
+               (l, (blocks.length - blocks.distinct.length))
+             }).maxBy(_._2)
 
-    println(guess._1, guess._2.toHexEncodedString)
+
+    guess._1 shouldEqual "d880619740a8a19b7840a8a31c810a3d08649af70dc06f4fd5d2d69c744cd283e2dd052f6b641dbf9d11b0348542bb5708649af70dc06f4fd5d2d69c744cd2839475c9dfdbc1d46597949d9c7e82bf5a08649af70dc06f4fd5d2d69c744cd28397a93eab8d6aecd566489154789a6b0308649af70dc06f4fd5d2d69c744cd283d403180c98c8f6db1f2a3f9c4040deb0ab51b29933f2c123c58386b06fba186a"
   }
 }
