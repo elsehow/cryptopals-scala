@@ -101,7 +101,7 @@ class Challenge6Spec extends FlatSpec with Matchers {
   }
 
   "Challenge6" should "produce scores for keysize guesses" in {
-    RepeatingSizeXORSolver
+    VigenereSolver
       .scoreKeySizeGuess(ciphertext, 5) shouldBe 3.2271777003484323
   }
 
@@ -109,11 +109,11 @@ class Challenge6Spec extends FlatSpec with Matchers {
     val keysizes =
       Range(2, 41)
 
-    RepeatingSizeXORSolver.findBestKeySizes(ciphertext, keysizes).head shouldBe 29
+    VigenereSolver.findBestKeySizes(ciphertext, keysizes).head shouldBe 29
   }
 
   "Challenge6" should "crack repeating-key XOR" in {
-    RepeatingSizeXORSolver
+    VigenereSolver
       .solve(ciphertext, 1)
       .toUTF8String
       .take(33) shouldEqual "I'm back and I'm ringin' the bell"

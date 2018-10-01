@@ -47,18 +47,28 @@ object SingleByteXORSolver {
     best
   }
 
+  /** Find the most probable key for the ciphertext. */
+  def bestKey (ciphertext: Buffer): Int = {
+    val keysAndTexts: Seq[Solution] =
+      bruteforce(ciphertext)
+    findMostEnglish(keysAndTexts).key
+  }
+
+
 }
 
-object RepeatingSizeXORSolver {
+object VigenereSolver {
   /*
 
-   xxxyyyzzz
+   Overall strategy:
+
+      xxxyyyzzz
 
    break the ciphertext into blocks of KEYSIZE length.
 
-   x x x
-   y y y
-   z z z
+      x x x
+      y y y
+      z z z
 
    now transpose the blocks: make a block that is the first byte of every
    block, and a block that is the second byte of every block, and so on. solve
@@ -68,47 +78,65 @@ object RepeatingSizeXORSolver {
    the key.
 
 
-   | x | x x
-   | y | y y
-   | z | z z
+      | x | x x
+      | y | y y
+      | z | z z
 
-   |
-   | find single-byte xor key
-   |
-   \ /
-   .
-   a  b  c     <- repeating-byte XOR key.
+        |
+        | find single-byte xor key
+        |
+       \ /
+        .
+        a  b  c     <- repeating-byte XOR key.
 
    */
 
 
-  /** Score key size guess using Hamming distance of adjacent blocks in the
-    * ciphertext.*/
+  /** Score how likely a given key size is to be the real keysize. (This score is
+    * relative: it can help you compare the likelihood of different keysizes).*/
   def scoreKeySizeGuess (text: Buffer, keySizeGuess: Integer): Double = {
-    val pairedSlices =
+
+    // evenly slice `text` into chunks of size `keySizeGuess`
+    val allSlices: Seq[Array[Byte]] =
       text
         .bytes
         .grouped(keySizeGuess)
         .filter { _.length == keySizeGuess} // chop off weird-sized end bits
+        .toList
+
+    // pair adjacent chunks
+    val pairedSlices: Seq[Seq[Array[Byte]]] =
+      allSlices
         .grouped(2) // pair em up
         .filter { _.length == 2} // chop off unpaired buffers
         .toList
 
+    // find the distances between each pair of adjacent chunks
     val distances =
       pairedSlices
-        .map { case(x: List[List[Byte]]) =>
+        .map { x =>
           Buffer(x.head) hammingDistance Buffer(x.tail.head) }
 
+    // get the average distance
     val averageDistance =
       distances
         .reduce { _ + _ }
         .toDouble / distances.length
 
-    // normalize the score by the sliceSize
+    // and noramlzie it
     averageDistance / keySizeGuess
   }
 
+  /** Rank possible keysizes in order of how likely they are to be the real keysize. */
+  def findBestKeySizes (ciphertext: Buffer, candidateKeysizes: Seq[Int]): Seq[Int] =
+    candidateKeysizes
+      .map { scoreKeySizeGuess(ciphertext, _) }
+      .zip { candidateKeysizes }
+      .sortWith { _._1 < _._1 }
+      .map { _._2 }
 
+
+  /** Split text into blocks of keySize, then transpose the blocks */
   def transposedBlocks (keySize: Integer, text: Buffer): Seq[Buffer] =
     text
       .bytes
@@ -121,44 +149,35 @@ object RepeatingSizeXORSolver {
       .map { _.toArray }
       .map { Buffer(_) }
 
-  def singleByteXORSolutionFor (block: Buffer): Int = {
-    val keysAndTexts: Seq[Solution] =
-      SingleByteXORSolver.bruteforce(block)
-    SingleByteXORSolver.findMostEnglish(keysAndTexts).key
-  }
 
+  /** Construct a key guess by finding the best single-byte XOR solution for each
+    * of the transposed blocks. */
   def findCandidateKey (transposedBlocks: Seq[Buffer]): Buffer = {
     Buffer(
       transposedBlocks
-        .map { singleByteXORSolutionFor _ }
+        .map { SingleByteXORSolver.bestKey _ }
         .map { _.toByte }
         .toArray
     )
   }
 
-  def decrypt (key: Buffer, ciphertext: Buffer): Buffer =
-    (ciphertext ^ Utils.cycleKey(key, ciphertext))
-
-
+  /** Find most likely plaintext for a given keySize. */
   def tryAtKeySize (keySize: Integer, ciphertext: Buffer): Buffer = {
     val transposed = transposedBlocks(keySize, ciphertext)
     val candidateKey = findCandidateKey(transposed)
-    decrypt(candidateKey, ciphertext)
+    Utils.decrypt(candidateKey, ciphertext)
   }
 
-  def findBestKeySizes (ciphertext: Buffer, candidateKeysizes: Seq[Int]): Seq[Int] =
-    candidateKeysizes
-      .map { scoreKeySizeGuess(ciphertext, _) }
-      .zip { candidateKeysizes }
-      .sortWith { _._1 < _._1 }
-      .map { _._2 }
 
-
-
-  def solve (ciphertext: Buffer, nKeySizesToTry: Int): Buffer = {
+  /** Find the most likely solution to a fixed-length XOR cipher */
+  def solve (
+    ciphertext: Buffer,
+    nKeySizesToTry: Int,
+    candidateKeysizes: Seq[Int] = Range(2,41)
+  ): Buffer = {
 
     val decryptions =
-      List(29, 40, 25, 9, 15)
+      findBestKeySizes(ciphertext, candidateKeysizes)
         .take(nKeySizesToTry)
         .map { tryAtKeySize(_, ciphertext) }
 

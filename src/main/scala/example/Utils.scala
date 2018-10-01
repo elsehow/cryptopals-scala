@@ -48,4 +48,9 @@ object Utils {
     Buffer(Utils.cycle(key.bytes).take(text.length).force.map {_.toByte}.toArray)
 
 
+  /** XOR decrypt */
+  def decrypt (key: Buffer, ciphertext: Buffer): Buffer =
+    (ciphertext ^ Utils.cycleKey(key, ciphertext))
+
+
 }
