@@ -65,4 +65,23 @@ case class Buffer (bytes: Array[Byte]) {
       .sum // sum all of the comparisons
   }
 
+  /** Score of 1 means all blocks are perfectly unique; less than that indicates
+    * repeating blocks */
+  def blockUniqueness(
+    blockSize: Integer=16
+  ): Double = {
+    // break into blockSize groups
+    val groups =
+      this
+        .toHexEncodedString
+        .grouped(blockSize)
+        .toVector
+    groups
+      .distinct
+      .length
+      .toDouble / groups.length
+  }
+
+
+
 }

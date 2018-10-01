@@ -90,7 +90,6 @@ class Challenge6Spec extends FlatSpec with Matchers {
 
   val file =
     Source.fromFile("src/test/assets/6.txt").getLines.mkString
-
   val ciphertext =
     Buffer.fromBase64EncodedString(file)
 
@@ -118,4 +117,19 @@ class Challenge6Spec extends FlatSpec with Matchers {
       .toUTF8String
       .take(33) shouldEqual "I'm back and I'm ringin' the bell"
   }
+}
+
+class Challenge7Spec extends FlatSpec with Matchers {
+  val file =
+    Source.fromFile("src/test/assets/7.txt").getLines.mkString
+  val ciphertext =
+    Buffer.fromBase64EncodedString(file)
+
+  "Challenge7" should "decrypt AES-128 in ECB mode" in {
+    Ciphers.decryptAES128ECB(
+      Buffer.fromUTF8String("YELLOW SUBMARINE"),
+      ciphertext
+    ).toUTF8String.take(33) shouldEqual "I'm back and I'm ringin' the bell"
+  }
+
 }
