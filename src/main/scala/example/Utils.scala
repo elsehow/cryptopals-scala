@@ -38,45 +38,6 @@ object Utils {
   }
 
 
-  /** Find all possible plaintexts to a buffer you know to be encrypted with a
-    * single-character XOR cipher, along with Byte used to decrypt. */
-  def bruteforceXORCipher (buffer: Buffer): Seq[(Int, Buffer)] = {
-
-    def bufferOf (byte: Byte, length: Integer): Buffer =
-      new Buffer(Array.fill[Byte](length)(byte))
-
-    def tryDecryptAgainst(buff: Buffer, byte: Byte) =
-      buffer ^ bufferOf(byte, buff.length)
-
-    val keys =
-      new Range(0,255, 1)
-
-    val decryptions =
-      keys
-        .map { _.toByte }
-        .map { tryDecryptAgainst(buffer, _) }
-
-    (keys zip decryptions)
-  }
-
-
-  /** Find the most probably English buffer */
-  def findMostEnglish (keysAndBuffers: Seq[(Int, Buffer)]): (Int, Buffer) = {
-
-    val scores =
-      keysAndBuffers
-        .map { _._2 } // just buffers
-        .map { scoreEnglishText _ }
-
-    val best =
-      (scores zip keysAndBuffers)
-        .sortWith( _._1 < _._1 )
-        .head
-        ._2
-
-    best
-  }
-
   /** Returns a lazy (infinite!) stream of repetitions of the items in seq. */
   def cycle[T](seq: Seq[T]): Stream[T] = {
     assert(seq.nonEmpty, "Cannot cycle over an empty sequence!")

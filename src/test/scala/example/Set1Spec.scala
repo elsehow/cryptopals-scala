@@ -40,9 +40,10 @@ class Challenge3Spec extends FlatSpec with Matchers {
     val ciphertext: Buffer =
       Buffer.fromHexEncodedString("1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736")
 
-    Utils.findMostEnglish(
-      Utils.bruteforceXORCipher(ciphertext)
-    )._2.toUTF8String shouldEqual "Cooking MC's like a pound of bacon"
+    SingleByteXORSolver.findMostEnglish(
+      SingleByteXORSolver.bruteforce(ciphertext)
+    ).plaintext
+      .toUTF8String shouldEqual "Cooking MC's like a pound of bacon"
   }
 }
 
@@ -56,12 +57,15 @@ class Challenge4Spec extends FlatSpec with Matchers {
     val hexStrings =
       Source.fromFile(filename).getLines
         .map { Buffer.fromHexEncodedString _ }
-        .map { Utils.bruteforceXORCipher _ }
+        .map { SingleByteXORSolver.bruteforce _ }
         .flatten
         .toList
 
-    val best = Utils.findMostEnglish(hexStrings)._2.toUTF8String
-    best.trim shouldEqual "Now that the party is jumping"
+    SingleByteXORSolver
+      .findMostEnglish(hexStrings)
+      .plaintext
+      .toUTF8String
+      .trim shouldEqual "Now that the party is jumping"
   }
 }
 
@@ -90,7 +94,6 @@ class Challenge6Spec extends FlatSpec with Matchers {
   val ciphertext =
     Buffer.fromBase64EncodedString(file)
 
-
   "Challenge6" should "compute Hamming distance" in {
     val one = Buffer.fromUTF8String("this is a test")
     val two = Buffer.fromUTF8String("wokka wokka!!!")
@@ -116,11 +119,3 @@ class Challenge6Spec extends FlatSpec with Matchers {
       .take(33) shouldEqual "I'm back and I'm ringin' the bell"
   }
 }
-
-
-
-
-    // // transposed.map {  }
-
-  // }
-// }
