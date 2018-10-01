@@ -133,3 +133,30 @@ class Challenge7Spec extends FlatSpec with Matchers {
   }
 
 }
+
+class Challenge8Spec extends FlatSpec with Matchers {
+
+  val ciphertexts =
+    Source.fromFile("src/test/assets/8.txt")
+      .getLines
+      .map { Buffer.fromHexEncodedString _ }
+      .toList
+
+  // "Challenge8" should "detect AES in ECB mode" in {
+  ignore should "detect AES in ECB mode" in {
+    val scores =
+      ciphertexts
+        .map { _.blockUniqueness() }
+        .toList
+
+    println(scores)
+
+    val guess =
+      (scores zip ciphertexts)
+        .toList
+        .sortWith(_._1 < _._1)
+        .head
+
+    println(guess._1, guess._2.toHexEncodedString)
+  }
+}
